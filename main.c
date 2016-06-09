@@ -12,9 +12,9 @@
 #include <project.h>
 #include <stdio.h>
 #include <math.h>
-#include <general.h>
-#include <fft.h>
-#include <debug.h>
+#include "general.h"
+#include "fft.h"
+#include "debug.h"
 
 //TODO write a function to calculate amplitude
 int main(){

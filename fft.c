@@ -9,8 +9,8 @@
  *
  * ========================================
 */
-#include <fft.h>
-#include <general.h>
+#include "fft.h"
+#include "general.h"
 
 extern fixed Sinewave[N_WAVE]; /* placed at end of this file for clarity */
 extern fixed Loudampl[N_LOUD];
