@@ -207,15 +207,14 @@ fixed Sinewave[1024] = {
 
 */
 
-
 /*
         fix_fft() - perform fast Fourier transform.
         fr[n],fi[n] are real,imaginary arrays, INPUT AND RESULT.
         size of data = 2**m
 */
-int fix_fft(fixed *  restrict fr, fixed  *  restrict fi, int m)
+int fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi, int m)
 {
-        int mr,nn,i,j,l,k,istep, n, scale;
+        int mr,nn,i,j,l,k, istep, n;
         fixed qr,qi,tr,ti,wr,wi,t;
 
         n = 1<<m;
@@ -224,7 +223,6 @@ int fix_fft(fixed *  restrict fr, fixed  *  restrict fi, int m)
         
         mr = 0;
         nn = n - 1;
-        scale = 0;
 
         /* decimation in time - re-order data */
         for(m=1; m<=nn; ++m) {
@@ -295,8 +293,9 @@ int fix_fft(fixed *  restrict fr, fixed  *  restrict fi, int m)
             l = istep;
             
         }
-
-        return scale;
+        
+    return 0;
+        
 }
 
 /*
@@ -304,7 +303,7 @@ int fix_fft(fixed *  restrict fr, fixed  *  restrict fi, int m)
         fr[n],fi[n] are real,imaginary arrays, INPUT AND RESULT.
         size of data = 2**m
 */
-int fix_ifft(fixed *  restrict fr, fixed  *  restrict fi, int m)
+int fix_ifft(fixed *  __restrict__  fr, fixed  *  __restrict__  fi, int m)
 {
         int mr,nn,i,j,l,k,istep, n, scale, shift;
         fixed qr,qi,tr,ti,wr,wi,t;

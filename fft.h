@@ -13,8 +13,8 @@
 #define FFT_H
 #include "general.h"
     
-int fix_ifft(fixed *  restrict fr, fixed  *  restrict fi, int m);
-int fix_fft(fixed *  restrict fr, fixed  *  restrict fi, int m);
+int fix_ifft(fixed *__restrict__  fr, fixed *__restrict__  fi, int m);
+int fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi, int m);
 
 /* FIX_MPY() - fixed-point multiplication macro.
    This macro is a statement, not an expression (uses asm).
