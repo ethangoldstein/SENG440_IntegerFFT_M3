@@ -213,9 +213,9 @@ fixed Sinewave[1024] = {
         fr[n],fi[n] are real,imaginary arrays, INPUT AND RESULT.
         size of data = 2**m
 */
-int fix_fft(fixed fr[], fixed fi[], int m)
+int fix_fft(fixed *  restrict fr, fixed  *  restrict fi, int m)
 {
-        int mr,nn,i,j,l,k,istep, n, scale, shift;
+        int mr,nn,i,j,l,k,istep, n, scale;
         fixed qr,qi,tr,ti,wr,wi,t;
 
         n = 1<<m;
@@ -304,7 +304,7 @@ int fix_fft(fixed fr[], fixed fi[], int m)
         fr[n],fi[n] are real,imaginary arrays, INPUT AND RESULT.
         size of data = 2**m
 */
-int fix_ifft(fixed fr[], fixed fi[], int m)
+int fix_ifft(fixed *  restrict fr, fixed  *  restrict fi, int m)
 {
         int mr,nn,i,j,l,k,istep, n, scale, shift;
         fixed qr,qi,tr,ti,wr,wi,t;
