@@ -32,7 +32,8 @@ int fix_fft(fixed fr[], fixed fi[], int m);
         asm adc dx,dx;                  \
         DEST = _DX;             }
 
-#define FIX_MPY(DEST,A,B)       DEST = ((long)(A) * (long)(B))>>15
+//#define FIX_MPY(DEST,A,B)       DEST = (((long)(A) * (long)(B))>>15)
+#define FIX_MPY(A,B)             ( ( (long)(A) * (long)(B) ) >> 15 )
 
 #if N_WAVE != 1024
         //ERROR: N_WAVE != 1024
