@@ -14,7 +14,9 @@
 #include "general.h"
     
 fixed fix_mpy(fixed a, fixed b);
-int fix_fft(fixed fr[], fixed fi[], int m, int inverse);
+int fix_ifft(fixed fr[], fixed fi[], int m);
+int fix_fft(fixed fr[], fixed fi[], int m);
+
 
 
 /* FIX_MPY() - fixed-point multiplication macro.
