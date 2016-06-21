@@ -11,7 +11,7 @@ f1 = 2; f2 = 30;                           % Frequencies, in Hz
 a1 = 1000; a2 = 40;
 %x0 = cos(2*pi*f0*t) + 0.55*cos(2*pi*f1*t);  % Time-domain signal
 for i=1:n
-    x0(i) = a1*cos(f1*2.0*(i-1)*3.1415926535/n);
+    x0(i) = a1*cos(f1*2.0*(i-1)*3.1415926535/n) + 1000;
 end
 x0 = complex(x0);                           % The textbook algorithm requires the input to be complex
 w0 = fidemo.fi_radix2twiddles(n);

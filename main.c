@@ -37,12 +37,10 @@ int main(){
     for (i=0; i<N; i++){
             real[i] = (int)(a1*cos(f1*2.0*i*3.1415926535/N)) + 1000;// + (int)(a2*cos(f2*2.0*i*3.1415926535/N)) + 100;
             imag[i] = 0;
-    }        
- 
-    
+    }   
     
     fix_fft(real, imag, M);
-    UART_1_PutString("Real and Image Transform Data\r\n");
+    UART_1_PutString("Real Transform Data\r\n");
     for (i=0; i<N; i++){                  
             itoa(real[i],string);
             UART_1_PutString(string);           

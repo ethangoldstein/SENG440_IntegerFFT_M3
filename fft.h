@@ -16,20 +16,6 @@
 int fix_ifft(fixed *__restrict__  fr, fixed *__restrict__  fi, int m);
 int fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi, int m);
 
-/* FIX_MPY() - fixed-point multiplication macro.
-   This macro is a statement, not an expression (uses asm).
-   BEWARE: make sure _DX is not clobbered by evaluating (A) or DEST.
-   args are all of type fixed.
-   Scaling ensures that 32767*32767 = 32767. */
-#define dosFIX_MPY(DEST,A,B)       {       \
-        _DX = (B);                      \
-        _AX = (A);                      \
-        asm imul dx;                    \
-        asm add ax,ax;                  \
-        asm adc dx,dx;                  \
-        DEST = _DX;             }
-
-//#define FIX_MPY(DEST,A,B)       DEST = (((long)(A) * (long)(B))>>15)
 #define FIX_MPY(A,B)             ( ( (long)(A) * (long)(B) ) >> 15 )
 
 #if N_WAVE != 1024
@@ -41,7 +27,7 @@ int fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi, int m);
 #define N_LOUD          100     /* dimension of Loudampl[] */
     
 #define M       10
-#define N       (1<<M)
+#define N       (1<<M)  //1<<M
     
 #endif
     
