@@ -11,6 +11,7 @@
 */
 #include "fft.h"
 #include "general.h"
+#include "bitrev.h"
 
 extern fixed Sinewave[N_WAVE]; /* placed at end of this file for clarity */
 
@@ -79,29 +80,9 @@ int fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi, int m)
 
         if(n > N_WAVE) return -1;
         
-        mr = 0;
-        nn = n - 1;
-
-        /* decimation in time - re-order data */
-        for(m=1; m<=nn; ++m) {
-            
-            l = n;
-        
-            do {
-                 l >>= 1;
-            } while(mr+l > nn);
-            
-            mr = (mr & (l-1)) + l;
-
-            if(mr <= m) continue;
-            
-            tr = fr[m];
-            fr[m] = fr[mr];
-            fr[mr] = tr;
-            ti = fi[m];
-            fi[m] = fi[mr];
-            fi[mr] = ti;
-        }
+        //bit reordering
+        bit_reversal(fr);
+        bit_reversal(fi);        
 
         l = 1;
         k = LOG2_N_WAVE-1;
