@@ -12,8 +12,13 @@
 #include "fft.h"
 #include "general.h"
 #include "bitrev.h"
+#include "debug.h"
+#include "UART_1.h"
+#include "LUT.h"
 
-extern fixed Sinewave[N_WAVE]; /* placed at end of this file for clarity */
+extern const fixed Sinewave[N_WAVE];
+extern const fixed sinLUT[SIN_LUT_SIZE];
+extern const fixed cosLUT[COS_LUT_SIZE];
 
 /*      fix_fft.c - Fixed-point Fast Fourier Transform  */
 /*
@@ -71,23 +76,21 @@ extern fixed Sinewave[N_WAVE]; /* placed at end of this file for clarity */
         fr[n],fi[n] are real,imaginary arrays, INPUT AND RESULT.
         size of data = 2**m
 */
-int fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi, int m)
+void fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi)
 {
-        int mr,nn,i,j,l,k, istep, n;
-        fixed qr,qi,tr,ti,wr,wi,t;
-
-        n = 1<<m;
-
-        if(n > N_WAVE) return -1;
-        
+        int i,j,l,k, istep, m;
+        fixed qr,qi,tr,ti,wr,wi;
+    
         //bit reordering
         bit_reversal(fr);
-        bit_reversal(fi);        
+        bit_reversal(fi);      
 
+        //setting up loop stuff
+        m = M; //size of fft in number of bits
         l = 1;
-        k = LOG2_N_WAVE-1;
+        k = M-1;
         
-        while(l < n) {
+        while(l < N) {
 
             /* fixed scaling, for proper normalization -
                there will be log2(n) passes, so this
@@ -101,14 +104,12 @@ int fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi, int m)
             for(m=0; m<l; ++m) {
                 
                 j = m << k;
-                /* 0 <= j < N_WAVE/2 */
-                wr =  Sinewave[j+N_WAVE/4];
-                wi = -Sinewave[j];
                 
-                wr >>= 1;
-                wi >>= 1;
+                //grabbing twiddle factors
+                wr = cosLUT[j]; 
+                wi = sinLUT[j]; 
                 
-                for(i=m; i<n; i+=istep) {
+                for(i=m; i<N; i+=istep) {
                     
                     j = i + l;
                                         
@@ -129,12 +130,8 @@ int fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi, int m)
             }
             
             --k;
-            l = istep;
-            
-        }
-        
-    return 0;
-        
+            l = istep;            
+        }     
 }
 
 /*

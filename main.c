@@ -21,7 +21,7 @@ int main(){
     fixed real[N], imag[N];
     char string[32];
     int     i;
-    int f1 = 2; int a1 = 1000;
+    int f1 = 2; int a1 = 100;
     int f2 = 30; int a2 = 40;
         
     CyGlobalIntEnable;        
@@ -35,11 +35,11 @@ int main(){
     CyDelay(200);
         
     for (i=0; i<N; i++){
-            real[i] = (int)(a1*cos(f1*2.0*i*3.1415926535/N)) + 1000;// + (int)(a2*cos(f2*2.0*i*3.1415926535/N)) + 100;
+            real[i] = (int)(a1*cos(f1*2.0*(i)*3.1415926535/N) + a2*sin(f2*2.0*(i)*3.1415926535/N) + 100);;// + (int)(a2*cos(f2*2.0*i*3.1415926535/N)) + 100;
             imag[i] = 0;
     }   
     
-    fix_fft(real, imag, M);
+    fix_fft(real, imag);
     UART_1_PutString("Real Transform Data\r\n");
     for (i=0; i<N; i++){                  
             itoa(real[i],string);
