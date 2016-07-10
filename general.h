@@ -9,13 +9,14 @@
  *
  * ========================================
 */
+
+#include "cytypes.h"
+
 #ifndef GENERAL_H
 #define GENERAL_H
     
-typedef short fixed;
+typedef int16 fixed;
     
-    
-
     
 #endif
 
