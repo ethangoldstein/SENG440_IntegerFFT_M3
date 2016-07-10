@@ -15,6 +15,7 @@
 #include "general.h"
 #include "fft.h"
 #include "debug.h"
+#include "bitrev.h"
 
 //TODO write a function to calculate amplitude
 int main(){

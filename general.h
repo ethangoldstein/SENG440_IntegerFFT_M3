@@ -11,6 +11,9 @@
 */
 #ifndef GENERAL_H
 #define GENERAL_H
+
+#include <project.h>
+  
     
 typedef short fixed;
     

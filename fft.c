@@ -78,15 +78,18 @@ extern const fixed cosLUT[COS_LUT_SIZE];
 */
 void fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi)
 {
+    
+        // A total of 16 variables - can we do better?
         int i,j,l,k, istep, m;
-        fixed qr,qi,tr,ti,wr,wi;
+        fixed qr, qi, tr,ti,wr,wi;
+        fixed fr_i_temp, fr_j_temp, fi_i_temp, fi_j_temp;
     
         //bit reordering
         bit_reversal(fr);
         bit_reversal(fi);      
 
         //setting up loop stuff
-        m = M; //size of fft in number of bits
+        //m = M; //size of fft in number of bits (this value for m is not used)
         l = 1;
         k = M-1;
         
@@ -112,20 +115,42 @@ void fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi)
                 for(i=m; i<N; i+=istep) {
                     
                     j = i + l;
-                                        
-                    tr = FIX_MPY(wr,fr[j]) - FIX_MPY(wi,fi[j]);
-                    ti = FIX_MPY(wr,fi[j]) + FIX_MPY(wi,fr[j]);
-                            
-                    qr = fr[i];
-                    qi = fi[i];
                     
-                    qr >>= 1;
-                    qi >>= 1;
+                    //On Cortex M3 sequential Load and store operations are easier to pipeline
+                    fr_i_temp = fr[i];
+                    fr_j_temp = fr[j];
+                    fi_i_temp = fi[i];
+                    fi_j_temp = fi[j];
+                                       
+                    tr = (long)wr * (long) fr_j_temp;
+                    tr -= (long)wi * (long) fi_j_temp;
+                    tr >>=15;
                     
-                    fr[j] = qr - tr;
-                    fi[j] = qi - ti;
-                    fr[i] = qr + tr;
-                    fi[i] = qi + ti;
+                    ti = (long)wr * (long) fi_j_temp;
+                    ti += (long)wi * (long) fr_j_temp;
+                    ti >>=15;
+                    
+//                    tr += FIX_MPY(wr,fr_j_temp);
+//                    tr -= FIX_MPY(wi,fi_j_temp);
+//                    ti += FIX_MPY(wr,fi_j_temp);
+//                    ti += FIX_MPY(wi,fr_j_temp);
+                                                           
+                    //tr = FIX_MPY(wr,fr_j_temp) - FIX_MPY(wi,fi_j_temp);
+                    //ti = FIX_MPY(wr,fi_j_temp) + FIX_MPY(wi,fr_j_temp);   
+                    
+                    qr = (fr_i_temp >> 1);
+                    qi = (fi_i_temp >> 1);
+                    
+                    fr_j_temp = qr - tr;
+                    fi_j_temp = qi - ti;
+                    fr_i_temp = qr + tr;
+                    fi_i_temp = qi + ti;
+                    
+                    //On Cortex M3 sequential Load and store operations are easier to pipeline
+                    fr[j] = fr_j_temp;
+                    fi[j] = fi_j_temp;
+                    fr[i] = fr_i_temp;
+                    fi[i] = fi_i_temp;
                 }
             }
             
@@ -139,100 +164,100 @@ void fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi)
         fr[n],fi[n] are real,imaginary arrays, INPUT AND RESULT.
         size of data = 2**m
 */
-int fix_ifft(fixed *  __restrict__  fr, fixed  *  __restrict__  fi, int m)
-{
-        int mr,nn,i,j,l,k,istep, n, scale, shift;
-        fixed qr,qi,tr,ti,wr,wi,t;
-
-                n = 1<<m;
-
-        if(n > N_WAVE)
-                return -1;
-
-        mr = 0;
-        nn = n - 1;
-        scale = 0;
-
-        /* decimation in time - re-order data */
-        for(m=1; m<=nn; ++m) {
-            l = n;
-            do {
-                    l >>= 1;
-            } while(mr+l > nn);
-            mr = (mr & (l-1)) + l;
-
-            if(mr <= m) continue;
-            tr = fr[m];
-            fr[m] = fr[mr];
-            fr[mr] = tr;
-            ti = fi[m];
-            fi[m] = fi[mr];
-            fi[mr] = ti;
-        }
-
-        l = 1;
-        k = LOG2_N_WAVE-1;
-        while(l < n) {
-
-            /* variable scaling, depending upon data */
-            shift = 0;
-        
-            for(i=0; i<n; ++i) {
-                j = fr[i];
-                if(j < 0)
-                        j = -j;
-                m = fi[i];
-                if(m < 0)
-                        m = -m;
-                if(j > 16383 || m > 16383) {
-                        shift = 1;
-                        break;
-                }
-            }
-            
-            if(shift) ++scale;
-             
-            /* it may not be obvious, but the shift will be performed
-               on each data point exactly once, during this pass. */
-            istep = l << 1;
-            for(m=0; m<l; ++m) {
-                j = m << k;
-                /* 0 <= j < N_WAVE/2 */
-                wr =  Sinewave[j+N_WAVE/4];
-                wi = -Sinewave[j];
-               
-                wi = -wi;
-                
-                if(shift) {
-                        wr >>= 1;
-                        wi >>= 1;
-                }
-                for(i=m; i<n; i+=istep) {
-                    j = i + l;
-                    
-                    tr = FIX_MPY(wr,fr[j]) - FIX_MPY(wi,fi[j]);
-                    ti = FIX_MPY(wr,fi[j]) + FIX_MPY(wi,fr[j]);
-                    
-                    qr = fr[i];
-                    qi = fi[i];
-                    
-                    if(shift) {
-                            qr >>= 1;
-                            qi >>= 1;
-                    }
-                    
-                    fr[j] = qr - tr;
-                    fi[j] = qi - ti;
-                    fr[i] = qr + tr;
-                    fi[i] = qi + ti;
-                }
-            }
-            --k;
-            l = istep;
-        }
-
-        return scale;
-}
+//int fix_ifft(fixed *  __restrict__  fr, fixed  *  __restrict__  fi, int m)
+//{
+//        int mr,nn,i,j,l,k,istep, n, scale, shift;
+//        fixed qr,qi,tr,ti,wr,wi,t;
+//
+//                n = 1<<m;
+//
+//        if(n > N_WAVE)
+//                return -1;
+//
+//        mr = 0;
+//        nn = n - 1;
+//        scale = 0;
+//
+//        /* decimation in time - re-order data */
+//        for(m=1; m<=nn; ++m) {
+//            l = n;
+//            do {
+//                    l >>= 1;
+//            } while(mr+l > nn);
+//            mr = (mr & (l-1)) + l;
+//
+//            if(mr <= m) continue;
+//            tr = fr[m];
+//            fr[m] = fr[mr];
+//            fr[mr] = tr;
+//            ti = fi[m];
+//            fi[m] = fi[mr];
+//            fi[mr] = ti;
+//        }
+//
+//        l = 1;
+//        k = LOG2_N_WAVE-1;
+//        while(l < n) {
+//
+//            /* variable scaling, depending upon data */
+//            shift = 0;
+//        
+//            for(i=0; i<n; ++i) {
+//                j = fr[i];
+//                if(j < 0)
+//                        j = -j;
+//                m = fi[i];
+//                if(m < 0)
+//                        m = -m;
+//                if(j > 16383 || m > 16383) {
+//                        shift = 1;
+//                        break;
+//                }
+//            }
+//            
+//            if(shift) ++scale;
+//             
+//            /* it may not be obvious, but the shift will be performed
+//               on each data point exactly once, during this pass. */
+//            istep = l << 1;
+//            for(m=0; m<l; ++m) {
+//                j = m << k;
+//                /* 0 <= j < N_WAVE/2 */
+//                wr =  Sinewave[j+N_WAVE/4];
+//                wi = -Sinewave[j];
+//               
+//                wi = -wi;
+//                
+//                if(shift) {
+//                        wr >>= 1;
+//                        wi >>= 1;
+//                }
+//                for(i=m; i<n; i+=istep) {
+//                    j = i + l;
+//                    
+//                    tr = FIX_MPY(wr,fr[j]) - FIX_MPY(wi,fi[j]);
+//                    ti = FIX_MPY(wr,fi[j]) + FIX_MPY(wi,fr[j]);
+//                    
+//                    qr = fr[i];
+//                    qi = fi[i];
+//                    
+//                    if(shift) {
+//                            qr >>= 1;
+//                            qi >>= 1;
+//                    }
+//                    
+//                    fr[j] = qr - tr;
+//                    fi[j] = qi - ti;
+//                    fr[i] = qr + tr;
+//                    fi[i] = qi + ti;
+//                }
+//            }
+//            --k;
+//            l = istep;
+//        }
+//
+//        return scale;
+//}
 
 
 /* [] END OF FILE */
