@@ -20,6 +20,9 @@ extern const fixed Sinewave[N_WAVE];
 extern const fixed sinLUT[SIN_LUT_SIZE];
 extern const fixed cosLUT[COS_LUT_SIZE];
 
+#define LIKELY(x)     __builtin_expect(x,1)
+#define UNLIKELY(x)   __builtin_expect(x,0)
+
 /*      fix_fft.c - Fixed-point Fast Fourier Transform  */
 /*
         fix_fft()       perform FFT or inverse FFT
@@ -81,8 +84,9 @@ void fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi)
     
         // A total of 16 variables - can we do better?
         int i,j,l,k, istep, m;
-        fixed qr, qi, tr,ti,wr,wi;
-        fixed fr_i_temp, fr_j_temp, fi_i_temp, fi_j_temp;
+        long wr,wi;
+        long fr_i_temp, fr_j_temp, fi_i_temp, fi_j_temp;
+        long  qr, qi, tr,ti;
     
         //bit reordering
         bit_reversal(fr);
@@ -93,7 +97,7 @@ void fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi)
         l = 1;
         k = M-1;
         
-        while(l < N) {
+        while(LIKELY(l < N)) {
 
             /* fixed scaling, for proper normalization -
                there will be log2(n) passes, so this
@@ -109,48 +113,43 @@ void fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi)
                 j = m << k;
                 
                 //grabbing twiddle factors
-                wr = cosLUT[j]; 
-                wi = sinLUT[j]; 
+                wr = (long)cosLUT[j]; 
+                wi = (long)sinLUT[j]; 
                 
-                for(i=m; i<N; i+=istep) {
+                for(i=m; LIKELY(i<N); i+=istep) {
                     
                     j = i + l;
                     
                     //On Cortex M3 sequential Load and store operations are easier to pipeline
-                    fr_i_temp = fr[i];
-                    fr_j_temp = fr[j];
-                    fi_i_temp = fi[i];
-                    fi_j_temp = fi[j];
+                    fr_i_temp = (long)fr[i];
+                    fr_j_temp = (long)fr[j];
+                    fi_i_temp = (long)fi[i];
+                    fi_j_temp = (long)fi[j];
                                        
-                    tr = (long)wr * (long) fr_j_temp;
-                    tr -= (long)wi * (long) fi_j_temp;
+                    tr = wr * fr_j_temp;
+                    tr -= wi *  fi_j_temp;
                     tr >>=15;
                     
-                    ti = (long)wr * (long) fi_j_temp;
-                    ti += (long)wi * (long) fr_j_temp;
+                    ti = wr * fi_j_temp;
+                    ti += wi * fr_j_temp;
                     ti >>=15;
                     
-//                    tr += FIX_MPY(wr,fr_j_temp);
-//                    tr -= FIX_MPY(wi,fi_j_temp);
-//                    ti += FIX_MPY(wr,fi_j_temp);
-//                    ti += FIX_MPY(wi,fr_j_temp);
-                                                           
-                    //tr = FIX_MPY(wr,fr_j_temp) - FIX_MPY(wi,fi_j_temp);
-                    //ti = FIX_MPY(wr,fi_j_temp) + FIX_MPY(wi,fr_j_temp);   
+//                    tr = FIX_MPY(wr,fr_j_temp) - FIX_MPY(wi,fi_j_temp);
+//                    ti = FIX_MPY(wr,fi_j_temp) + FIX_MPY(wi,fr_j_temp);
                     
                     qr = (fr_i_temp >> 1);
                     qi = (fi_i_temp >> 1);
                     
-                    fr_j_temp = qr - tr;
-                    fi_j_temp = qi - ti;
-                    fr_i_temp = qr + tr;
-                    fi_i_temp = qi + ti;
+                    fr_j_temp = (qr - tr);
+                    fi_j_temp = (qi - ti);
+                    fr_i_temp = (qr + tr);
+                    fi_i_temp = (qi + ti);
                     
                     //On Cortex M3 sequential Load and store operations are easier to pipeline
-                    fr[j] = fr_j_temp;
-                    fi[j] = fi_j_temp;
-                    fr[i] = fr_i_temp;
-                    fi[i] = fi_i_temp;
+                    fr[j] = (fixed)fr_j_temp;
+                    fi[j] = (fixed)fi_j_temp;
+                    fr[i] = (fixed)fr_i_temp;
+                    fi[i] = (fixed)fi_i_temp;
                 }
             }
             

@@ -41,6 +41,7 @@ int main(){
     }   
     
     fix_fft(real, imag);
+    
     UART_1_PutString("Real Transform Data\r\n");
     for (i=0; i<N; i++){                  
             itoa(real[i],string);
