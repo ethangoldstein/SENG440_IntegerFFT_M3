@@ -10,9 +10,11 @@
  * ========================================
 */
 #include "fft.h"
-
-extern fixed Sinewave[N_WAVE]; /* placed at end of this file for clarity */
-extern fixed Loudampl[N_LOUD];
+#include "general.h"
+#include "bitrev.h"
+#include "debug.h"
+#include "UART_1.h"
+#include "LUT.h"
 
 extern const fixed Sinewave[N_WAVE];
 extern const fixed sinLUT[SIN_LUT_SIZE];
@@ -74,90 +76,62 @@ extern const fixed cosLUT[COS_LUT_SIZE];
         fr[n],fi[n] are real,imaginary arrays, INPUT AND RESULT.
         size of data = 2**m
 */
-
-#define likely(x)      __builtin_expect((x), 1)
-#define unlikely(x)    __builtin_expect((x), 0)
-
-int fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi, int16 m)
+void fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi)
 {
-        
-        int16 mr,nn,i,j,l,k, istep, n;
-        fixed qr,qi,tr,ti,wr,wi,t;
+        int i,j,l,k, istep, m;
+        fixed qr,qi,tr,ti,wr,wi;
     
+        //bit reordering
+        bit_reversal(fr);
+        bit_reversal(fi);      
 
-        n = 1<<m;
-
-        if(unlikely(n > N_WAVE)) return -1;
-        
-        mr = 0;
-        nn = n - 1;
-        
-        /* decimation in time - re-order data */
-        for(m=1;likely( m<=nn); ++m) {
-            
-            l = n;
-        
-            do {
-                 l >>= 1;
-            } while(mr+l > nn);
-                       
-            mr = (mr & (l-1)) + l;
-
-            if(mr <= m) continue;
-            
-            tr = fr[m];
-            fr[m] = fr[mr];
-            fr[mr] = tr;
-            
-            ti = fi[m];
-            fi[m] = fi[mr];
-            fi[mr] = ti;
-        }
-
+        //setting up loop stuff
+        m = M; //size of fft in number of bits
         l = 1;
-        k = LOG2_N_WAVE-1; // = 9
+        k = M-1;
         
-        while(likely(l < n)) {
+        while(l < N) {
+
+            /* fixed scaling, for proper normalization -
+               there will be log2(n) passes, so this
+               results in an overall factor of 1/n,
+               distributed to maximize arithmetic accuracy. */
             
             /* it may not be obvious, but the shift will be performed
                on each data point exactly once, during this pass. */
             istep = l << 1;
             
-            for(m=0; likely(m<l); ++m) {
+            for(m=0; m<l; ++m) {
                 
                 j = m << k;
                 
-                /* 0 <= j < N_WAVE/2 */
-                //Change order to allow for software pipelining
-                wr =  Sinewave[j+N_WAVE/4] >> 1;
-                wi = -Sinewave[j] >> 1;           
+                //grabbing twiddle factors
+                wr = cosLUT[j]; 
+                wi = sinLUT[j]; 
                 
-                for(i=m; likely(i<n); i+=istep) {
+                for(i=m; i<N; i+=istep) {
                     
                     j = i + l;
-                    
-                    qr = fr[i] >> 1;
-                    tr = FIX_MPY(wr,fr[j]) - FIX_MPY(wi,fi[j]);
-                    fr[i] = qr + tr;
-                    
-                    qi = fi[i] >> 1; 
-                    ti = FIX_MPY(wr,fi[j]) + FIX_MPY(wi,fr[j]);  
-                    fi[i] = qi + ti;
                                         
-                    fi[j] = qi - ti;
+                    tr = FIX_MPY(wr,fr[j]) - FIX_MPY(wi,fi[j]);
+                    ti = FIX_MPY(wr,fi[j]) + FIX_MPY(wi,fr[j]);
+                            
+                    qr = fr[i];
+                    qi = fi[i];
+                    
+                    qr >>= 1;
+                    qi >>= 1;
+                    
                     fr[j] = qr - tr;
-                      
+                    fi[j] = qi - ti;
+                    fr[i] = qr + tr;
+                    fi[i] = qi + ti;
                 }
-                
             }
             
             --k;
-            l = istep;
-            
-        }
-        
-    return 0;
-        
+            l = istep;            
+        }     
 }
 
 /*
@@ -165,9 +139,9 @@ int fix_fft(fixed *__restrict__  fr, fixed  *__restrict__  fi, int16 m)
         fr[n],fi[n] are real,imaginary arrays, INPUT AND RESULT.
         size of data = 2**m
 */
-int fix_ifft(fixed *  __restrict__  fr, fixed  *  __restrict__  fi, int16 m)
+int fix_ifft(fixed *  __restrict__  fr, fixed  *  __restrict__  fi, int m)
 {
-        int16 mr,nn,i,j,l,k,istep, n, scale, shift;
+        int mr,nn,i,j,l,k,istep, n, scale, shift;
         fixed qr,qi,tr,ti,wr,wi,t;
 
                 n = 1<<m;

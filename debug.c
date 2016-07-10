@@ -15,11 +15,13 @@
 char* itoa(fixed i, char b[]){
     char const digit[] = "0123456789";
     char* p = b;
+    int shifter = i;
+    
     if(i<0){
         *p++ = '-';
         i *= -1;
     }
-    int shifter = i;
+    
     do{ //Move to where representation ends
         ++p;
         shifter = shifter/10;
