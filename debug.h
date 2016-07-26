@@ -15,6 +15,7 @@
 #include "general.h"
 
 char* itoa(fixed i, char b[]);
+char* uitoa(uint16 i, char b[]);
 
 
 

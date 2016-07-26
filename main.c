@@ -34,14 +34,23 @@ int main(){
     UART_1_PutString(string); /* Sending the data */
     UART_1_PutString("\r\n\r\n"); /* Sending the data */
     CyDelay(200);
+    
+
         
     for (i=0; i<N; i++){
             real[i] = (int)(a1*cos(f1*2.0*(i)*3.1415926535/N) + a2*sin(f2*2.0*(i)*3.1415926535/N) + 100);;// + (int)(a2*cos(f2*2.0*i*3.1415926535/N)) + 100;
             imag[i] = 0;
     }   
-    
+     //timer for measuring improvement
+    Counter_WriteCounter(0x00);
+    Counter_Start();    
     fix_fft(real, imag);
-    
+    CyDelayUs(100);
+    uint16 time = (uint16)Counter_ReadCounter();
+    uitoa(time,string);
+    UART_1_PutString(string);
+    UART_1_PutString("\r\n"); 
+    /*
     UART_1_PutString("Real Transform Data\r\n");
     for (i=0; i<N; i++){                  
             itoa(real[i],string);
@@ -50,7 +59,7 @@ int main(){
             itoa(imag[i],string);
             UART_1_PutString(string);
             UART_1_PutString("\r\n");  
-    }
+    }*/
    return 0;
 }
 /* [] END OF FILE */
