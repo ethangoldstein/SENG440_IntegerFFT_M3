@@ -50,7 +50,7 @@ int main(){
     uitoa(time,string);
     UART_1_PutString(string);
     UART_1_PutString("\r\n"); 
-    /*
+    
     UART_1_PutString("Real Transform Data\r\n");
     for (i=0; i<N; i++){                  
             itoa(real[i],string);
@@ -59,7 +59,7 @@ int main(){
             itoa(imag[i],string);
             UART_1_PutString(string);
             UART_1_PutString("\r\n");  
-    }*/
+    }
    return 0;
 }
 /* [] END OF FILE */
